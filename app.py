@@ -75,4 +75,3 @@ elif seccion == "Cadenas Comerciales":
     info = cadenas[cadenas["Cadena Comercial"] == cadena_seleccionada]
     st.markdown(f"**Descripción:** {info['Descripción'].values[0]}")
     st.markdown(f"**Ventajas para Eco 3D Innovations:** {info['Ventajas Clave'].values[0]}")
-
