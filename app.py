@@ -1,68 +1,81 @@
-import streamlit as st
+import dash
+from dash import dcc, html
+import dash_table
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
-# Carga de archivos
-@st.cache_data
-def load_data():
-    cadenas = pd.read_excel("cadenas_comerciales.xlsx", skiprows=1)
-    competencia = pd.read_excel("Competencia.xlsx", skiprows=1)
-    crecimiento = pd.read_excel("Crecimiento.xlsx", skiprows=1)
-    participacion = pd.read_excel("participación.xlsx", skiprows=1)
-    proyecciones = pd.read_excel("proyecciones.xlsx", skiprows=1)
-    return cadenas, competencia, crecimiento, participacion, proyecciones
+# =====================
+# Carga de datos
+# =====================
 
-cadenas, competencia, crecimiento, participacion, proyecciones = load_data()
+df_crecimiento = pd.read_excel("data/Crecimiento.xlsx", sheet_name="Crecimiento")
+df_participacion = pd.read_excel("data/participación.xlsx", sheet_name="participación")
+df_proyecciones = pd.read_excel("data/proyecciones.xlsx", sheet_name="Hoja1")
+df_competencia = pd.read_excel("data/Competencia.xlsx", sheet_name="Competencia ")
+df_cadenas = pd.read_excel("data/cadenas comerciales.xlsx", sheet_name="Hoja1")
 
-# Menú lateral
-st.sidebar.title("Dashboard 3D Construction")
-opcion = st.sidebar.radio("Selecciona una vista", [
-    "Cadenas Comerciales", 
-    "Competencia", 
-    "Crecimiento del Mercado", 
-    "Participación Regional", 
-    "Proyecciones Globales"
+# =====================
+# Inicialización de la app
+# =====================
+app = dash.Dash(_name_)
+app.title = "Dashboard de Cadenas Comerciales"
+
+# =====================
+# Layout del Dashboard
+# =====================
+app.layout = html.Div([
+    html.H1("Dashboard de Cadenas Comerciales", style={"textAlign": "center", "marginBottom": "30px"}),
+
+    html.H2("Proyecciones de Ventas"),
+    dcc.Graph(
+        figure=px.line(df_proyecciones, 
+                       x=df_proyecciones.columns[0], 
+                       y=df_proyecciones.columns[1:], 
+                       markers=True, 
+                       title="Proyecciones por Cadena")
+    ),
+
+    html.H2("Participación de Mercado"),
+    dcc.Graph(
+        figure=px.bar(df_participacion, 
+                      x=df_participacion.columns[0], 
+                      y=df_participacion.columns[1:], 
+                      barmode="group", 
+                      title="Participación por Año")
+    ),
+
+    html.H2("Crecimiento Anual"),
+    dcc.Graph(
+        figure=px.line(df_crecimiento, 
+                       x=df_crecimiento.columns[0], 
+                       y=df_crecimiento.columns[1:], 
+                       markers=True, 
+                       title="Crecimiento de las Cadenas")
+    ),
+
+    html.H2("Competencia"),
+    dash_table.DataTable(
+        data=df_competencia.to_dict('records'),
+        columns=[{"name": i, "id": i} for i in df_competencia.columns],
+        style_table={'overflowX': 'auto', 'marginBottom': '40px'},
+        style_cell={'textAlign': 'left', 'whiteSpace': 'normal'},
+    ),
+
+    html.H2("Información Cualitativa de Cadenas"),
+    dash_table.DataTable(
+        data=df_cadenas.iloc[1:].to_dict('records'),
+        columns=[
+            {"name": "Cadena Comercial", "id": df_cadenas.columns[1]},
+            {"name": "Descripción", "id": df_cadenas.columns[2]},
+            {"name": "Ventajas Clave", "id": df_cadenas.columns[3]},
+        ],
+        style_table={'overflowX': 'auto'},
+        style_cell={'textAlign': 'left', 'whiteSpace': 'normal'},
+    )
 ])
 
-# Cadenas Comerciales
-if opcion == "Cadenas Comerciales":
-    st.title("Cadenas Comerciales")
-    st.dataframe(cadenas)
-
-# Competencia
-elif opcion == "Competencia":
-    st.title("Competencia")
-    st.dataframe(competencia)
-    if st.checkbox("Ver empresas por país"):
-        paises = competencia["Unnamed: 2"].unique()
-        filtro = st.selectbox("Selecciona país", paises)
-        st.dataframe(competencia[competencia["Unnamed: 2"] == filtro])
-
-# Crecimiento del Mercado
-elif opcion == "Crecimiento del Mercado":
-    st.title("Crecimiento del Mercado")
-    st.dataframe(crecimiento)
-    fig, ax = plt.subplots()
-    ax.bar(crecimiento["Unnamed: 1"], crecimiento["Unnamed: 3"])
-    ax.set_ylabel("Crecimiento (%)")
-    ax.set_title("Tasa de Crecimiento por Periodo")
-    st.pyplot(fig)
-
-# Participación Regional
-elif opcion == "Participación Regional":
-    st.title("Participación Regional de Mercado")
-    st.dataframe(participacion)
-    fig, ax = plt.subplots()
-    ax.bar(participacion["Región"], participacion["Participación de mercado (%)"])
-    ax.set_ylabel("% Participación")
-    st.pyplot(fig)
-
-# Proyecciones Globales
-elif opcion == "Proyecciones Globales":
-    st.title("Proyecciones del Mercado")
-    st.dataframe(proyecciones)
-    fig, ax = plt.subplots()
-    ax.plot(proyecciones["Año"], proyecciones["Unnamed: 3"])
-    ax.set_ylabel("Valor (USD Millones)")
-    ax.set_title("Proyección de Tamaño de Mercado")
-    st.pyplot(fig)
+# =====================
+# Ejecutar Servidor
+# =====================
+if _name_ == "_main_":
+    app.run_server(debug=True)
