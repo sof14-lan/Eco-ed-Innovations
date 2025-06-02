@@ -1,61 +1,68 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# Título del dashboard
-st.title("📊 Dashboard Dinámico - Eco3D Innovations")
-
-# Cargar archivos desde GitHub (actualiza las URLs con tus rutas reales en GitHub)
+# Carga de archivos
 @st.cache_data
 def load_data():
-    proyecciones = pd.read_csv("https://raw.githubusercontent.com/tu_usuario/tu_repo/main/proyecciones.csv")
-    crecimiento = pd.read_csv("https://raw.githubusercontent.com/tu_usuario/tu_repo/main/crecimiento.csv")
-    participacion = pd.read_csv("https://raw.githubusercontent.com/tu_usuario/tu_repo/main/participacion.csv")
-    competencia = pd.read_csv("https://raw.githubusercontent.com/tu_usuario/tu_repo/main/competencia.csv")
-    cadenas = pd.read_csv("https://raw.githubusercontent.com/tu_usuario/tu_repo/main/cadenas_comerciales.csv")
-    return proyecciones, crecimiento, participacion, competencia, cadenas
+    cadenas = pd.read_excel("cadenas_comerciales.xlsx", skiprows=1)
+    competencia = pd.read_excel("Competencia.xlsx", skiprows=1)
+    crecimiento = pd.read_excel("Crecimiento.xlsx", skiprows=1)
+    participacion = pd.read_excel("participación.xlsx", skiprows=1)
+    proyecciones = pd.read_excel("proyecciones.xlsx", skiprows=1)
+    return cadenas, competencia, crecimiento, participacion, proyecciones
 
-proyecciones, crecimiento, participacion, competencia, cadenas = load_data()
+cadenas, competencia, crecimiento, participacion, proyecciones = load_data()
 
-# Sidebar para seleccionar sección
-seccion = st.sidebar.radio("Selecciona la sección", [
-    "Proyecciones de Mercado",
-    "Crecimiento del Mercado",
-    "Participación Regional",
-    "Competencia",
-    "Cadenas Comerciales"
+# Menú lateral
+st.sidebar.title("Dashboard 3D Construction")
+opcion = st.sidebar.radio("Selecciona una vista", [
+    "Cadenas Comerciales", 
+    "Competencia", 
+    "Crecimiento del Mercado", 
+    "Participación Regional", 
+    "Proyecciones Globales"
 ])
 
-# Visualizaciones por sección
-if seccion == "Proyecciones de Mercado":
-    st.subheader("📈 Proyecciones del Mercado de Impresión 3D")
-    for label in proyecciones["Mercado (Descripción)"].unique():
-        subset = proyecciones[proyecciones["Mercado (Descripción)"] == label]
-        st.line_chart(data=subset, x="Año", y="Valor (USD Millones)", use_container_width=True)
-    st.dataframe(proyecciones)
-
-elif seccion == "Crecimiento del Mercado":
-    st.subheader("📊 Tasa de Crecimiento Proyectada")
-    st.bar_chart(data=crecimiento, x="Periodo", y="Porcentaje (%)")
-    st.dataframe(crecimiento)
-
-elif seccion == "Participación Regional":
-    st.subheader("🌎 Participación de Mercado por Región")
-    st.dataframe(participacion)
-    st.write("**Distribución de Participación:**")
-    st.bar_chart(data=participacion.set_index("Región"))
-
-elif seccion == "Competencia":
-    st.subheader("🏗️ Empresas Competidoras en EE.UU.")
-    st.dataframe(competencia)
-    st.write("**Cantidad de competidores por estado:**")
-    ubicaciones = competencia["Ubicación"].value_counts().reset_index()
-    ubicaciones.columns = ["Ubicación", "Cantidad"]
-    st.bar_chart(data=ubicaciones.set_index("Ubicación"))
-
-elif seccion == "Cadenas Comerciales":
-    st.subheader("🛒 Análisis de Cadenas Comerciales B2B")
+# Cadenas Comerciales
+if opcion == "Cadenas Comerciales":
+    st.title("Cadenas Comerciales")
     st.dataframe(cadenas)
-    cadena_seleccionada = st.selectbox("Selecciona una cadena para ver sus ventajas", cadenas["Cadena Comercial"].unique())
-    info = cadenas[cadenas["Cadena Comercial"] == cadena_seleccionada]
-    st.markdown(f"**Descripción:** {info['Descripción'].values[0]}")
-    st.markdown(f"**Ventajas para Eco 3D Innovations:** {info['Ventajas Clave'].values[0]}")
+
+# Competencia
+elif opcion == "Competencia":
+    st.title("Competencia")
+    st.dataframe(competencia)
+    if st.checkbox("Ver empresas por país"):
+        paises = competencia["Unnamed: 2"].unique()
+        filtro = st.selectbox("Selecciona país", paises)
+        st.dataframe(competencia[competencia["Unnamed: 2"] == filtro])
+
+# Crecimiento del Mercado
+elif opcion == "Crecimiento del Mercado":
+    st.title("Crecimiento del Mercado")
+    st.dataframe(crecimiento)
+    fig, ax = plt.subplots()
+    ax.bar(crecimiento["Unnamed: 1"], crecimiento["Unnamed: 3"])
+    ax.set_ylabel("Crecimiento (%)")
+    ax.set_title("Tasa de Crecimiento por Periodo")
+    st.pyplot(fig)
+
+# Participación Regional
+elif opcion == "Participación Regional":
+    st.title("Participación Regional de Mercado")
+    st.dataframe(participacion)
+    fig, ax = plt.subplots()
+    ax.bar(participacion["Región"], participacion["Participación de mercado (%)"])
+    ax.set_ylabel("% Participación")
+    st.pyplot(fig)
+
+# Proyecciones Globales
+elif opcion == "Proyecciones Globales":
+    st.title("Proyecciones del Mercado")
+    st.dataframe(proyecciones)
+    fig, ax = plt.subplots()
+    ax.plot(proyecciones["Año"], proyecciones["Unnamed: 3"])
+    ax.set_ylabel("Valor (USD Millones)")
+    ax.set_title("Proyección de Tamaño de Mercado")
+    st.pyplot(fig)
