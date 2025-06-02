@@ -1,3 +1,4 @@
+print("✅ Archivo app.py correcto está corriendo")
 import dash
 from dash import dcc, html
 import dash_table
